@@ -15,7 +15,9 @@ namespace NetBridge.Windows.Adb;
 /// </summary>
 public static class AdbServerManager
 {
-    private const string PlatformToolsUrl = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
+    // dl.google.com is unreachable from some networks (e.g. IR) — the Tencent
+    // mirror serves the same platform-tools package and stays as the primary.
+    private const string PlatformToolsUrl = "https://mirrors.cloud.tencent.com/AndroidSDK/platform-tools-latest-windows.zip";
     private static readonly object Lock = new();
 
     public static string? ResolvedAdbPath { get; private set; }

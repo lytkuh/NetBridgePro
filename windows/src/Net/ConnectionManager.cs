@@ -250,6 +250,12 @@ public class ConnectionManager
         catch (Exception ex)
         {
             Logger.Warn("Conn", "bridge connect failed: " + ex.Message);
+            if (ex.Message.Contains("no verify") || ex.Message.Contains("no auth"))
+                Logger.Warn("Conn",
+                    "pairing token mismatch or phone bridge not responding — " +
+                    "phone app: Security tab → Copy token → PC: Settings → Pairing token; " +
+                    "or plug the USB cable and press 'Run: activate & grant permissions' then 'Sync from phone'. " +
+                    "Also restart 'sharing' on the phone once after an app update.");
         }
 
         // 6) phone info
