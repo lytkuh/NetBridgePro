@@ -1,0 +1,80 @@
+<Page x:Class="NetBridge.Windows.Ui.AboutPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="760" HorizontalAlignment="Center" Margin="0,0,0,18">
+
+            <!-- Identity header -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="24">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,10">
+                        <Image x:Name="LogoImage" Width="96" Height="96" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <StackPanel Margin="20,6,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="AppNameText" Text="NetBridge Pro" FontSize="26" FontWeight="Bold" Foreground="#E8FBFF" />
+                            <TextBlock x:Name="TaglineText" FontSize="13" Foreground="#22D3EE" Margin="0,6,0,0" TextWrapping="Wrap" />
+                            <TextBlock x:Name="VersionText" FontSize="11.5" Foreground="#8FA3B8" FontFamily="Consolas" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- What is this project -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="20">
+                <StackPanel>
+                    <TextBlock x:Name="WhatTitle" Style="{StaticResource CardTitle}" />
+                    <TextBlock x:Name="WhatBody" FontSize="13" LineHeight="21" Foreground="#DCE7F2" Margin="0,10,0,0" TextWrapping="Wrap" />
+                    <TextBlock x:Name="WhatBody2" FontSize="12" LineHeight="19" Foreground="#8FA3B8" Margin="0,8,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- Credits -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="20">
+                <StackPanel>
+                    <TextBlock x:Name="CreditsTitle" Style="{StaticResource CardTitle}" />
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.ColumnSpan="2">
+                            <TextBlock x:Name="DevLabel" FontSize="11" Foreground="#8FA3B8" />
+                            <TextBlock x:Name="DevValue" FontSize="15" FontWeight="SemiBold" Foreground="#E8FBFF" Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.ColumnSpan="2">
+                            <TextBlock x:Name="SiteLabel" FontSize="11" Foreground="#8FA3B8" />
+                            <TextBlock x:Name="SiteValue" FontSize="15" FontWeight="SemiBold" Foreground="#34D399"
+                                       Cursor="Hand" MouseLeftButtonUp="Site_Click" Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Grid.ColumnSpan="2">
+                            <TextBlock x:Name="GithubLabel" FontSize="11" Foreground="#8FA3B8" />
+                            <TextBlock x:Name="GithubValue" FontSize="15" FontWeight="SemiBold" Foreground="#C9D1D9"
+                                       Cursor="Hand" MouseLeftButtonUp="Github_Click" Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="6" Grid.ColumnSpan="2">
+                            <TextBlock x:Name="PoweredLabel" FontSize="11" Foreground="#8FA3B8" />
+                            <TextBlock x:Name="PoweredValue" FontSize="15" FontWeight="SemiBold" Foreground="#FBBF24" Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="8" Grid.ColumnSpan="2">
+                            <TextBlock x:Name="SubsidiaryLabel" FontSize="11" Foreground="#8FA3B8" />
+                            <TextBlock x:Name="SubsidiaryValue" FontSize="15" FontWeight="SemiBold" Foreground="#E8FBFF" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock x:Name="FooterText" FontSize="11" Foreground="#8FA3B8" HorizontalAlignment="Center" Margin="0,4,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

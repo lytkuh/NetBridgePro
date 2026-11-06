@@ -1,0 +1,19 @@
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.apk
+*.jks
+
+# Windows
+windows/.vs/
+windows/src/bin/
+windows/src/obj/
+windows/publish/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db

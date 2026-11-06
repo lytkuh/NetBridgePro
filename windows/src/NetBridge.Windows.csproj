@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NetBridge.Windows</RootNamespace>
+    <AssemblyName>NetBridge.Windows</AssemblyName>
+    <ApplicationManifest>App.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\netbridge.ico</ApplicationIcon>
+    <Version>1.2.0</Version>
+    <FileVersion>1.2.0.0</FileVersion>
+    <Company>LytKuh Studio</Company>
+    <Authors>Mohammadreza Khazaei</Authors>
+    <Product>NetBridge Pro</Product>
+    <Description>High-performance phone tethering with full RAN mode control</Description>
+    <Copyright>© LytKuh Studio — Developer: Mohammadreza Khazaei</Copyright>
+    <!-- Single-file publish profile flags are set from CLI; keep defaults here -->
+    <LangVersion>12.0</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\netbridge-logo.png" />
+    <Resource Include="Assets\netbridge.ico" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,67 @@
+<Page x:Class="NetBridge.Windows.Ui.SignalPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ctl="clr-namespace:NetBridge.Windows.Ui.Controls">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+
+            <Border Style="{StaticResource Card}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" MinWidth="170">
+                        <TextBlock x:Name="RatBig" Text="—" FontSize="42" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" />
+                        <TextBlock x:Name="NrBadge" Text="" Foreground="{StaticResource Accent2Brush}" FontSize="13" Margin="0,2,0,0" />
+                        <TextBlock x:Name="OperatorText" Text="" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0"
+                                   TextWrapping="Wrap" MaxWidth="230" />
+                    </StackPanel>
+                    <UniformGrid Grid.Column="1" Columns="2" Margin="18,0,0,0">
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="RSRP" Style="{StaticResource Muted}" />
+                            <Grid>
+                                <ProgressBar x:Name="BarRsrp" Height="7" Minimum="-140" Maximum="-44" Value="-140" />
+                            </Grid>
+                            <TextBlock x:Name="ValRsrp" Text="—" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <StackPanel Margin="24,0,0,8">
+                            <TextBlock Text="SINR" Style="{StaticResource Muted}" />
+                            <ProgressBar x:Name="BarSinr" Height="7" Minimum="-10" Maximum="35" Value="-10" Foreground="{StaticResource Accent2Brush}" />
+                            <TextBlock x:Name="ValSinr" Text="—" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="RSRQ" Style="{StaticResource Muted}" />
+                            <ProgressBar x:Name="BarRsrq" Height="7" Minimum="-22" Maximum="-3" Value="-22" Foreground="{StaticResource WarnBrush}" />
+                            <TextBlock x:Name="ValRsrq" Text="—" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <StackPanel Margin="24,0,0,0">
+                            <TextBlock Text="RSSI" Style="{StaticResource Muted}" />
+                            <ProgressBar x:Name="BarRssi" Height="7" Minimum="-110" Maximum="-40" Value="-110" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock x:Name="ValRssi" Text="—" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </UniformGrid>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock x:Name="HistTitle" Text="RSRP — 60s" Style="{StaticResource CardTitle}" />
+                    <ctl:SpeedChart x:Name="RsrpChart" Height="150" Margin="0,8,0,0" Unit="dBm" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <UniformGrid Columns="3">
+                    <StackPanel><TextBlock Text="باند" Style="{StaticResource Muted}" /><TextBlock x:Name="BandVal" Text="—" Style="{StaticResource Mono}" /></StackPanel>
+                    <StackPanel><TextBlock Text="PCI" Style="{StaticResource Muted}" /><TextBlock x:Name="PciVal" Text="—" Style="{StaticResource Mono}" /></StackPanel>
+                    <StackPanel><TextBlock Text="TAC" Style="{StaticResource Muted}" /><TextBlock x:Name="TacVal" Text="—" Style="{StaticResource Mono}" /></StackPanel>
+                    <StackPanel Margin="0,8,0,0"><TextBlock Text="Cell ID" Style="{StaticResource Muted}" /><TextBlock x:Name="CidVal" Text="—" Style="{StaticResource Mono}" /></StackPanel>
+                    <StackPanel Margin="0,8,0,0"><TextBlock Text="CQI" Style="{StaticResource Muted}" /><TextBlock x:Name="CqiVal" Text="—" Style="{StaticResource Mono}" /></StackPanel>
+                    <StackPanel Margin="0,8,0,0"><TextBlock Text="Data" Style="{StaticResource Muted}" /><TextBlock x:Name="DataVal" Text="—" Style="{StaticResource Mono}" /></StackPanel>
+                </UniformGrid>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -1,0 +1,40 @@
+<Page x:Class="NetBridge.Windows.Ui.AppsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="0,0,0,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource Card}">
+            <StackPanel>
+                <TextBlock x:Name="TitleText" Text="فایروال برنامه‌ای ویندوز" Style="{StaticResource CardTitle}" />
+                <TextBlock x:Name="HintText" Text="" Style="{StaticResource Muted}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button x:Name="RefreshBtn" Content="بازخوانی" Click="Refresh_Click" />
+                    <TextBlock x:Name="ElevText" Text="" Margin="12,0,0,0" VerticalAlignment="Center"
+                               Foreground="{StaticResource WarnBrush}" FontSize="12" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource Card}">
+            <DataGrid x:Name="AppsGrid" ItemsSource="{Binding Apps}" AutoGenerateColumns="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="برنامه" Binding="{Binding Name}" Width="220" />
+                    <DataGridTextColumn Header="مسیر" Binding="{Binding Path}" Width="*" />
+                    <DataGridTemplateColumn Header="مسدود" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Blocked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Checked="Block_Changed" Unchecked="Block_Changed"
+                                          HorizontalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</Page>

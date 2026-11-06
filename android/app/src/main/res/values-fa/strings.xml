@@ -1,0 +1,87 @@
+<resources>
+    <string name="tab_dashboard">داشبورد</string>
+    <string name="tab_network">شبکه</string>
+    <string name="tab_security">امنیت</string>
+    <string name="tab_settings">تنظیمات</string>
+    <string name="tab_about">درباره ما</string>
+
+    <string name="status_idle">غیرفعال</string>
+    <string name="status_running">در حال اجرا</string>
+    <string name="start_service">شروع اشتراک اینترنت</string>
+    <string name="stop_service">توقف اشتراک</string>
+    <string name="proxy_card">موتور پراکسی</string>
+    <string name="proxy_clients">اتصال‌های فعال</string>
+    <string name="proxy_down">دانلود</string>
+    <string name="proxy_up">آپلود</string>
+    <string name="tether_card">تترینگ USB</string>
+    <string name="tether_on">رابط تترینگ فعال است</string>
+    <string name="tether_off">رابط تترینگ خاموش است</string>
+    <string name="signal_card">سیگنال</string>
+    <string name="bridge_card">پل همراه (Companion)</string>
+    <string name="bridge_connected">همراه متصل است</string>
+    <string name="bridge_disconnected">در انتظار اتصال همراه…</string>
+    <string name="no_signal">هنوز داده سیگنالی نیست</string>
+
+    <string name="network_title">کنترل حالت شبکه رادیویی</string>
+    <string name="network_hint">قفل رادیو روی یک نسل مشخص. اعمال حالت، preferred_network_mode را می‌نویسد و در صورت نیاز همراه (Companion) با چرخه حالت هواپیما آن را قطعی می‌کند.</string>
+    <string name="mode_auto_5g">خودکار 5G / 4G / 3G / 2G</string>
+    <string name="mode_auto_4g">خودکار 4G / 3G / 2G</string>
+    <string name="mode_lte_only">فقط 4G (LTE)</string>
+    <string name="mode_nr_only">فقط 5G (NR)</string>
+    <string name="mode_nr_lte">5G + 4G</string>
+    <string name="mode_3g_only">فقط 3G (WCDMA)</string>
+    <string name="mode_2g_only">فقط 2G (GSM)</string>
+    <string name="mode_3g_2g">3G + 2G</string>
+    <string name="current_mode">مقدار فعلی مود</string>
+    <string name="current_rat">نوع رادیو</string>
+    <string name="sim_number">سیم‌کارت %1$d</string>
+    <string name="apply_mode">اعمال</string>
+    <string name="apply_notice">ثبت شد. همراه، نتیجه را بررسی می‌کند و در صورت عدم تغییر رادیو، حالت هواپیما را یک‌بار چرخه می‌دهد.</string>
+    <string name="smart_switcher">سوییچر هوشمند</string>
+    <string name="smart_off">خاموش</string>
+    <string name="smart_stability">حداکثر پایداری</string>
+    <string name="smart_speed">حداکثر سرعت</string>
+    <string name="smart_battery">نگه‌داری باتری</string>
+
+    <string name="security_title">امنیت</string>
+    <string name="token_card">توکن جفت‌سازی</string>
+    <string name="token_hint">برنامه ویندوز این توکن را خودکار می‌خواند (دکمه «همگام‌سازی از گوشی» هنگام اتصال کابل). احراز ترافیک با HMAC-SHA256 انجام می‌شود.</string>
+    <string name="copy">کپی</string>
+    <string name="regenerate">بازتولید</string>
+    <string name="grant_card">دسترسی‌های اعطاشده از PC</string>
+    <string name="granted">دارد</string>
+    <string name="not_granted">ندارد</string>
+    <string name="wss_perm">WRITE_SECURE_SETTINGS</string>
+    <string name="lockdown_card">قفل اشکال‌زدایی USB</string>
+    <string name="lockdown_on">قفل فعال: دیباگ USB خاموش (حالت خصوصی)</string>
+    <string name="lockdown_off">دیباگ USB روشن (حالت همراه)</string>
+    <string name="lockdown_hint">با قفل، adb سراسری خاموش می‌شود و هیچ کامپیوتری نمی‌تواند جلسه دیباگ باز کند. برنامه از طریق رابط تترینگ USB به کار خود ادامه می‌دهد. برای فعال‌سازی دوباره امکانات کامل همراه، Developer options را روشن کنید.</string>
+
+    <string name="settings_title">تنظیمات</string>
+    <string name="proxy_port">درگاه پراکسی</string>
+    <string name="bridge_port">درگاه پل</string>
+    <string name="bind_all">گوش‌دادن به همه رابط‌ها</string>
+    <string name="require_auth">الزام احراز هویت</string>
+    <string name="signal_interval">فاصله نمونه‌برداری سیگنال (ms)</string>
+    <string name="start_on_boot">شروع خودکار پس از روشن‌شدن</string>
+    <string name="auto_start_service">شروع خودکار سرویس هنگام باز کردن اپ</string>
+    <string name="save">ذخیره</string>
+    <string name="language">زبان</string>
+
+    <!-- ===== درباره ما ===== -->
+    <string name="about_tagline">تترینگ حرفه‌ای گوشی ← کامپیوتر، در سطح PdaNet و بالاتر</string>
+    <string name="about_version">نسخه %1$s</string>
+    <string name="about_what_title">درباره این پروژه</string>
+    <string name="about_what_body">نت‌بریج پرو یک راهکار کامل و حرفه‌ای برای اشتراک اینترنت از گوشی به کامپیوتر است؛ مهندسی‌شده برای سرعت، امنیت و کنترل کامل روی شبکه. این برنامه یک مسیر داده چندپروتکلی SOCKS5/HTTP را با کنترل کامل شبکه رادیویی (قفل 2G تا 5G)، مانیتور زنده سیگنال و مدل امنیتی «دیباگ USB خصوصی» ترکیب می‌کند.</string>
+    <string name="about_what_body2">مسیر داده از طریق تترینگ USB (NCM/RNDIS)، تونل ADB، هات‌اسپوت Wi-Fi یا بلوتوث PAN با سوئیچ خودکار برقرار می‌شود و مسیر کنترل، یک پل JSON با احراز هویت HMAC-SHA256 است. DNS امن (DoH)، فایروال برنامه‌ای ویندوز و تست سرعت واقعی داخل تونل نیز به‌صورت داخلی در دسترس‌اند.</string>
+    <string name="about_credits_title">سازندگان</string>
+    <string name="about_developer">سازنده و توسعه‌دهنده</string>
+    <string name="about_developer_name">محمدرضا خزاعی</string>
+    <string name="about_website">وب‌سایت رسمی</string>
+    <string name="about_github">مخزن سورس و نسخه‌ها (گیت‌هاب)</string>
+    <string name="about_powered">قدرت‌گرفته از</string>
+    <string name="about_powered_name">ForgeAI-Studio</string>
+    <string name="about_subsidiary">زیرمجموعه</string>
+    <string name="about_subsidiary_name">LytKuh Studio (استودیو لیت‌کوه)</string>
+    <string name="about_footer">NetBridge Pro · منتشرشده تحت مجوز MIT · © LytKuh Studio</string>
+</resources>

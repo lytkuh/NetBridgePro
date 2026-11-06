@@ -1,0 +1,9 @@
+<UserControl x:Class="NetBridge.Windows.Ui.Controls.SpeedChart"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Border Background="#0D1118" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="9">
+            <Canvas x:Name="Plot" ClipToBounds="True" />
+        </Border>
+    </Grid>
+</UserControl>

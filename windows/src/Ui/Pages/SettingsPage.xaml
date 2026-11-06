@@ -1,0 +1,113 @@
+<Page x:Class="NetBridge.Windows.Ui.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+
+            <!-- General -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock x:Name="GenTitle" Text="عمومی" Style="{StaticResource CardTitle}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock x:Name="LangLabel" Text="زبان (نیاز به راه‌اندازی مجدد):" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <RadioButton x:Name="LangFa" Style="{StaticResource ChipRadio}" Content="فارسی" GroupName="lang" Checked="Lang_Changed" Tag="fa" />
+                        <RadioButton x:Name="LangEn" Style="{StaticResource ChipRadio}" Content="English" GroupName="lang" Checked="Lang_Changed" Tag="en" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <CheckBox x:Name="AutoStartChk" Content="اجرای خودکار با ویندوز" Checked="AutoStart_Changed" Unchecked="AutoStart_Changed" />
+                        <CheckBox x:Name="SysProxyChk" Content="تنظیم خودکار پروکسی سیستم" Margin="24,0,0,0" Checked="SysProxy_Changed" Unchecked="SysProxy_Changed" />
+                        <CheckBox x:Name="NcmChk" Content="اولویت USB تترینگ" Margin="24,0,0,0" Checked="Ncm_Changed" Unchecked="Ncm_Changed" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Security & pairing -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock x:Name="SecTitle" Text="امنیت" Style="{StaticResource CardTitle}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <RadioButton x:Name="ModeCompanion" Style="{StaticResource ChipRadio}" GroupName="sec"
+                                     Content="حالت همراه (امکانات کامل)" Checked="SecMode_Changed" Tag="companion" />
+                        <RadioButton x:Name="ModeLockdown" Style="{StaticResource ChipRadio}" GroupName="sec"
+                                     Content="حالت قفل (دیباگ USB خاموش)" Checked="SecMode_Changed" Tag="lockdown" />
+                    </StackPanel>
+                    <TextBlock x:Name="SecHint" Text="" Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <TextBlock x:Name="TokenLabel" Text="توکن جفت‌سازی:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox x:Name="TokenBox" Width="380" FontFamily="Consolas" FontSize="11"
+                                 LostFocus="TokenBox_LostFocus" />
+                        <Button x:Name="CopyBtn" Content="کپی" Margin="8,0,0,0" Click="CopyToken_Click" />
+                        <Button x:Name="RegenBtn" Content="همگام‌سازی از گوشی" Margin="6,0,0,0" Click="RegenToken_Click" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="PairTitle" Text="جفت‌سازی و اعطای دسترسی" Style="{StaticResource CardTitle}" Margin="0,14,0,0" />
+                    <TextBlock x:Name="PairHint" Text="" Style="{StaticResource Muted}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button x:Name="PairBtn" Style="{StaticResource PrimaryBtn}" Content="اجرا: فعال‌سازی و گرنت دسترسی‌ها" Click="Pair_Click" />
+                        <ProgressBar x:Name="PairBar" Width="160" IsIndeterminate="True" Visibility="Collapsed" Margin="12,0,0,0" />
+                    </StackPanel>
+                    <ListBox x:Name="PairLog" Height="130" Margin="0,8,0,0" Background="Transparent" BorderThickness="0"
+                             FontFamily="Consolas" FontSize="11" />
+                </StackPanel>
+            </Border>
+
+            <!-- ADB -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock x:Name="AdbTitle" Text="adb اختصاصی" Style="{StaticResource CardTitle}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock x:Name="AdbStatusLabel" Text="وضعیت:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock x:Name="AdbStatus" Text="—" VerticalAlignment="Center" />
+                        <Button x:Name="AdbInstallBtn" Content="نصب platform-tools (خودکار)" Margin="16,0,0,0" Click="AdbInstall_Click" />
+                        <TextBlock x:Name="AdbProgress" Text="" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource Accent2Brush}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock x:Name="KeyLabel" Text="اثر انگشت کلید:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock x:Name="KeyFp" Text="—" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- DNS + ports -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock x:Name="DnsTitle" Text="DNS و درگاه‌ها" Style="{StaticResource CardTitle}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <RadioButton x:Name="DnsRemote" Style="{StaticResource ChipRadio}" GroupName="dns" Content="حل از گوشی (توصیه‌شده)" Checked="Dns_Changed" Tag="remote" />
+                        <RadioButton x:Name="DnsDoh" Style="{StaticResource ChipRadio}" GroupName="dns" Content="DoH روی PC" Checked="Dns_Changed" Tag="local-doh" />
+                        <RadioButton x:Name="DnsSystem" Style="{StaticResource ChipRadio}" GroupName="dns" Content="DNS سیستم" Checked="Dns_Changed" Tag="system" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock x:Name="DohLabel" Text="ارائه‌دهنده DoH:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox x:Name="DohBox" Width="290">
+                            <ComboBoxItem Content="Cloudflare (1.1.1.1)" Tag="https://cloudflare-dns.com/dns-query" />
+                            <ComboBoxItem Content="Google (8.8.8.8)" Tag="https://dns.google/dns-query" />
+                            <ComboBoxItem Content="AdGuard" Tag="https://dns.adguard-dns.com/dns-query" />
+                        </ComboBox>
+                    </StackPanel>
+                    <UniformGrid Columns="3" Margin="0,12,0,0">
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock x:Name="LpPortLabel" Text="درگاه پراکسی محلی" Style="{StaticResource Muted}" />
+                            <TextBox x:Name="LpPortBox" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock x:Name="LimitLabel" Text="محدودیت سرعت (KB/s، صفر=بی‌حد)" Style="{StaticResource Muted}" />
+                            <TextBox x:Name="LimitBox" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock x:Name="DataDirLabel" Text="پوشه داده‌ها" Style="{StaticResource Muted}" />
+                            <TextBlock x:Name="DataDirVal" Text="" Style="{StaticResource Mono}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </UniformGrid>
+                    <TextBlock x:Name="BypassLabel" Text="دامنه‌های عبور مستقیم (هر خط یک مورد):" Style="{StaticResource Muted}" Margin="0,10,0,4" />
+                    <TextBox x:Name="BypassBox" Height="76" AcceptsReturn="True" TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11.5" />
+                    <Button x:Name="SaveBtn" Style="{StaticResource PrimaryBtn}" Content="ذخیره تنظیمات" Margin="0,12,0,0"
+                            HorizontalAlignment="Left" Click="Save_Click" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

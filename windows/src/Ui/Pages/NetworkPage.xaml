@@ -1,0 +1,86 @@
+<Page x:Class="NetBridge.Windows.Ui.NetworkPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock x:Name="TitleText" Text="کنترل حالت شبکه رادیویی" Style="{StaticResource CardTitle}" />
+                    <TextBlock x:Name="HintText" Text="" Style="{StaticResource Muted}" Margin="0,5,0,0"
+                               TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock x:Name="SimLabel" Text="سیم‌کارت" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <RadioButton x:Name="Sim0" Style="{StaticResource ChipRadio}" Content="SIM 1" GroupName="sim" IsChecked="True" />
+                        <RadioButton x:Name="Sim1" Style="{StaticResource ChipRadio}" Content="SIM 2" GroupName="sim" />
+                        <TextBlock x:Name="CurrentLabel" Text="مقدار فعلی:" Margin="16,0,6,0" VerticalAlignment="Center"
+                                   Foreground="{StaticResource MutedBrush}" />
+                        <TextBlock x:Name="CurrentMode" Text="—" Style="{StaticResource Mono}" VerticalAlignment="Center" />
+                        <TextBlock x:Name="RatLabel" Text="رادیو:" Margin="16,0,6,0" VerticalAlignment="Center"
+                                   Foreground="{StaticResource MutedBrush}" />
+                        <TextBlock x:Name="RatValue" Text="—" Style="{StaticResource Mono}" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <WrapPanel Margin="0,12,0,0">
+                        <RadioButton x:Name="N5gAuto" Style="{StaticResource ChipRadio}" Content="5G خودکار" Click="Mode_Click" Tag="5G_AUTO" />
+                        <RadioButton x:Name="N5g4g" Style="{StaticResource ChipRadio}" Content="5G+4G" Click="Mode_Click" Tag="5G_4G" />
+                        <RadioButton x:Name="N5gOnly" Style="{StaticResource ChipRadio}" Content="فقط 5G" Click="Mode_Click" Tag="5G_ONLY" />
+                        <RadioButton x:Name="N4gAuto" Style="{StaticResource ChipRadio}" Content="4G خودکار" Click="Mode_Click" Tag="4G_AUTO" />
+                        <RadioButton x:Name="N4gOnly" Style="{StaticResource ChipRadio}" Content="فقط 4G" Click="Mode_Click" Tag="4G_ONLY" />
+                        <RadioButton x:Name="N3gOnly" Style="{StaticResource ChipRadio}" Content="فقط 3G" Click="Mode_Click" Tag="3G_ONLY" />
+                        <RadioButton x:Name="N3g2g" Style="{StaticResource ChipRadio}" Content="3G+2G" Click="Mode_Click" Tag="3G_2G" />
+                        <RadioButton x:Name="N2gOnly" Style="{StaticResource ChipRadio}" Content="فقط 2G" Click="Mode_Click" Tag="2G_ONLY" />
+                    </WrapPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock x:Name="RawLabel" Text="مقدار دلخواه (0-33):" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox x:Name="RawValue" Width="70" MaxLength="2" />
+                        <Button x:Name="RawApplyBtn" Content="اعمال" Margin="8,0,0,0" Click="RawApply_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock x:Name="LogTitle" Text="گزارش اعمال" Style="{StaticResource CardTitle}" />
+                    <ListBox x:Name="TimelineList" Height="210" Margin="0,8,0,0"
+                             Background="Transparent" BorderThickness="0"
+                             FontFamily="Consolas" FontSize="11.5" Foreground="{StaticResource TextBrush}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="SmartTitle" Text="سوییچر هوشمند" Style="{StaticResource CardTitle}" />
+                        <CheckBox x:Name="SmartEnabled" Content="فعال" Margin="12,0,0,0"
+                                  Checked="Smart_Changed" Unchecked="Smart_Changed" />
+                        <TextBlock x:Name="SmartStatus" Text="" Margin="16,0,0,0" Foreground="{StaticResource Accent2Brush}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock x:Name="PolicyLabel" Text="سیاست:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <RadioButton x:Name="PolStability" Style="{StaticResource ChipRadio}" Content="حداکثر پایداری" GroupName="pol" IsChecked="True" Checked="Policy_Changed" />
+                        <RadioButton x:Name="PolSpeed" Style="{StaticResource ChipRadio}" Content="حداکثر سرعت" GroupName="pol" Checked="Policy_Changed" />
+                        <RadioButton x:Name="PolBattery" Style="{StaticResource ChipRadio}" Content="باتری" GroupName="pol" Checked="Policy_Changed" />
+                    </StackPanel>
+                    <UniformGrid Columns="3" Margin="0,12,0,0">
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock x:Name="RsrpBadLabel" Text="آستانه بد RSRP" Style="{StaticResource Muted}" />
+                            <TextBox x:Name="RsrpBadBox" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock x:Name="RsrpGoodLabel" Text="آستانه خوب RSRP" Style="{StaticResource Muted}" />
+                            <TextBox x:Name="RsrpGoodBox" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock x:Name="CooldownLabel" Text="فاصله سوییچ (ثانیه)" Style="{StaticResource Muted}" />
+                            <TextBox x:Name="CooldownBox" />
+                        </StackPanel>
+                    </UniformGrid>
+                    <Button x:Name="SaveBtn" Content="ذخیره" Margin="0,12,0,0" HorizontalAlignment="Left" Click="SaveSmart_Click" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>
