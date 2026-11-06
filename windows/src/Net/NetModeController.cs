@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using NetBridge.Windows.Adb;
 using NetBridge.Windows.Bridge;
 
@@ -46,8 +47,25 @@ public class NetModeController
 
     private void Log(string line)
     {
-        Timeline.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {line}");
-        while (Timeline.Count > 200) Timeline.RemoveAt(Timeline.Count - 1);
+        // Log() is called from background tasks (ApplyAsync, SmartSwitcher).
+        // The Timeline is bound to the NetworkPage ListBox — WPF requires all
+        // collection changes on the Dispatcher thread or the page crashes with
+        // "CollectionView does not support changes from a different thread".
+        var line2 = $"[{DateTime.Now:HH:mm:ss}] {line}";
+        var d = Application.Current?.Dispatcher;
+        if (d == null || d.CheckAccess())
+        {
+            Timeline.Insert(0, line2);
+            while (Timeline.Count > 200) Timeline.RemoveAt(Timeline.Count - 1);
+        }
+        else
+        {
+            d.BeginInvoke(() =>
+            {
+                Timeline.Insert(0, line2);
+                while (Timeline.Count > 200) Timeline.RemoveAt(Timeline.Count - 1);
+            });
+        }
         Logger.Info("NetMode", line);
     }
 

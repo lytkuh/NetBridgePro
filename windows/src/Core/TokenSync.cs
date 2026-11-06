@@ -26,7 +26,16 @@ public static class TokenSync
                 $"run-as {Constants.AndroidPackageId} cat shared_prefs/netbridge.xml", ct).ConfigureAwait(false);
             AdbServerClient.ExtractRc(outp, out var clean);
             var m = TokenRx.Match(clean);
-            return m.Success ? m.Groups[1].Value.ToLowerInvariant() : null;
+            if (!m.Success)
+            {
+                // run-as works only on debuggable builds — the public APK is a
+                // release build, so Android refuses it. Manual copy is the way.
+                Logger.Warn("Token",
+                    "could not read phone token (run-as is unavailable for release builds) — " +
+                    "copy it manually: phone app → Security tab → Copy → PC Settings → Pairing token");
+                return null;
+            }
+            return m.Groups[1].Value.ToLowerInvariant();
         }
         catch (Exception ex)
         {
