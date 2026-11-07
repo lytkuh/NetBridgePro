@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -65,26 +66,36 @@ class BridgeServer(
     fun start() {
         if (!running.compareAndSet(false, true)) return
         scope.launch {
-            try {
-                val ss = ServerSocket()
-                ss.reuseAddress = true
-                ss.bind(InetSocketAddress("0.0.0.0", Prefs.bridgePort))
-                serverSocket = ss
-                Logger.i(TAG, "Bridge listening on 0.0.0.0:${Prefs.bridgePort}")
-                while (running.get() && scope.isActive) {
-                    val client = try {
-                        ss.accept()
-                    } catch (e: IOException) {
-                        if (running.get()) Logger.w(TAG, "accept failed: ${e.message}")
-                        break
+            // Watchdog: a dead accept loop means the companion can never pair —
+            // restart the listener up to 6 times before giving up.
+            var attempts = 0
+            while (running.get() && scope.isActive && attempts < 6) {
+                try {
+                    val ss = ServerSocket()
+                    ss.reuseAddress = true
+                    ss.bind(InetSocketAddress("0.0.0.0", Prefs.bridgePort))
+                    serverSocket = ss
+                    Logger.i(TAG, "Bridge listening on 0.0.0.0:${Prefs.bridgePort}")
+                    while (running.get() && scope.isActive) {
+                        val client = try {
+                            ss.accept()
+                        } catch (e: IOException) {
+                            if (running.get()) Logger.w(TAG, "accept failed: ${e.message}")
+                            break
+                        }
+                        scope.launch { handle(client, sessions.incrementAndGet()) }
                     }
-                    scope.launch { handle(client, sessions.incrementAndGet()) }
+                } catch (e: Exception) {
+                    Logger.e(TAG, "Bridge crashed (attempt $attempts)", e)
                 }
-            } catch (e: Exception) {
-                Logger.e(TAG, "Bridge crashed", e)
-            } finally {
-                running.set(false)
+                attempts++
+                try { serverSocket?.close() } catch (_: IOException) {}
+                if (running.get() && scope.isActive && attempts < 6) {
+                    Logger.w(TAG, "restarting bridge in 2s…")
+                    delay(2000)
+                }
             }
+            running.set(false)
         }
     }
 
@@ -145,9 +156,24 @@ class BridgeServer(
         val cmd = req.optString("cmd")
         val args = req.optJSONObject("args") ?: JSONObject()
 
-        if (cmd != "auth" && cmd != "auth.verify" && !session.authenticated) {
+        val preAuth = cmd == "auth" || cmd == "auth.verify" || cmd == "pair.token"
+        if (!preAuth && !session.authenticated) {
             JSONObject().put("id", id).put("ok", false).put("error", "auth required").toString()
         } else when (cmd) {
+            // hands the pairing token to the physically-connected companion.
+            // Only answered while the adb broadcast opened the pairing window.
+            "pair.token" -> {
+                if (!PairingWindow.isOpen()) {
+                    JSONObject().put("id", id).put("ok", false)
+                        .put("error", "pairing window closed").toString()
+                } else {
+                    PairingWindow.open() // consume: one fetch per window
+                    JSONObject().put("id", id).put("ok", true)
+                        .put("result", JSONObject().put("token", Prefs.token))
+                        .toString()
+                }
+            }
+
             "auth" -> {
                 val serverNonce = UUID.randomUUID().toString().replace("-", "")
                 session.lastServerNonce = serverNonce

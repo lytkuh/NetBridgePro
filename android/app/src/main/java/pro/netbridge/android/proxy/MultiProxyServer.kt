@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -71,27 +72,37 @@ class MultiProxyServer(private val stats: ProxyStats) {
         if (!running.compareAndSet(false, true)) return
         scope.launch {
             val port = Prefs.proxyPort
-            try {
-                val ss = ServerSocket()
-                ss.reuseAddress = true
-                ss.bind(InetSocketAddress(if (Prefs.bindAll) "0.0.0.0" else "127.0.0.1", port))
-                serverSocket = ss
-                Logger.i(TAG, "Listening on ${if (Prefs.bindAll) "0.0.0.0" else "127.0.0.1"}:$port")
-                while (running.get() && scope.isActive) {
-                    val client = try {
-                        ss.accept()
-                    } catch (e: IOException) {
-                        if (running.get()) Logger.w(TAG, "accept failed: ${e.message}")
-                        break
+            // Watchdog: a single accept/bind crash used to kill the data plane
+            // for good ("connected but no internet"). Restart up to 6 times.
+            var attempts = 0
+            while (running.get() && scope.isActive && attempts < 6) {
+                try {
+                    val ss = ServerSocket()
+                    ss.reuseAddress = true
+                    ss.bind(InetSocketAddress(if (Prefs.bindAll) "0.0.0.0" else "127.0.0.1", port))
+                    serverSocket = ss
+                    Logger.i(TAG, "Listening on ${if (Prefs.bindAll) "0.0.0.0" else "127.0.0.1"}:$port")
+                    while (running.get() && scope.isActive) {
+                        val client = try {
+                            ss.accept()
+                        } catch (e: IOException) {
+                            if (running.get()) Logger.w(TAG, "accept failed: ${e.message}")
+                            break
+                        }
+                        scope.launch { handleClient(client) }
                     }
-                    scope.launch { handleClient(client) }
+                } catch (e: Exception) {
+                    Logger.e(TAG, "Proxy server crashed (attempt $attempts)", e)
                 }
-            } catch (e: Exception) {
-                Logger.e(TAG, "Proxy server crashed", e)
-            } finally {
-                running.set(false)
-                Logger.i(TAG, "Proxy server stopped")
+                attempts++
+                try { serverSocket?.close() } catch (_: IOException) {}
+                if (running.get() && scope.isActive && attempts < 6) {
+                    Logger.w(TAG, "restarting proxy server in 2s…")
+                    delay(2000)
+                }
             }
+            running.set(false)
+            Logger.i(TAG, "Proxy server stopped")
         }
     }
 

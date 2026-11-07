@@ -69,6 +69,11 @@ object Prefs {
         get() = sp.getBoolean("require_auth", true)
         set(v) = sp.edit().putBoolean("require_auth", v).apply()
 
+    /** Asked once for battery-optimization exemption (keeps the service alive). */
+    var batteryPrompted: Boolean
+        get() = sp.getBoolean("battery_prompted", false)
+        set(v) = sp.edit().putBoolean("battery_prompted", v).apply()
+
     // ---- Signal ------------------------------------------------------------
 
     var signalIntervalMs: Int

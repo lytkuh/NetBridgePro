@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Net;
+using System.Net.Http;
+
 using NetBridge.Windows.Adb;
 using NetBridge.Windows.Bridge;
 
@@ -289,8 +292,91 @@ public class ConnectionManager
         State.StatusText = "conn_connected";
         Logger.Info("Conn", $"connected via {State.Transport} ({State.Endpoint})");
 
-        // 8) loops
+        // 8) end-to-end internet verification + one-shot self-heal.
+        // TCP "connected" says nothing about the data plane — a token mismatch
+        // makes the phone proxy close every SOCKS session ("stream ended").
+        // This verifies a REAL request through the whole chain and, on failure
+        // with a USB device attached, re-syncs the token and verifies again.
+        _ = VerifyInternetLoopAsync(ct);
+
+        // 9) loops
         _ = MonitorLoopAsync(ct);
+    }
+
+    /// <summary>True when a 204/2xx comes back through the full tunnel.</summary>
+    public static async Task<bool> VerifyInternetAsync(int localProxyPort, CancellationToken ct)
+    {
+        try
+        {
+            using var handler = new HttpClientHandler
+            {
+                Proxy = new WebProxy($"http://127.0.0.1:{localProxyPort}"),
+                UseProxy = true,
+                AllowAutoRedirect = false
+            };
+            using var http = new HttpClient(handler, disposeHandler: true)
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+            using var resp = await http.GetAsync("http://www.gstatic.com/generate_204", ct).ConfigureAwait(false);
+            return (int)resp.StatusCode is 204 or >= 200 and < 300;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return false; // our own timeout
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private async Task VerifyInternetLoopAsync(CancellationToken ct)
+    {
+        var port = SettingsStore.Current.LocalProxyPort;
+        await Task.Delay(2500, ct).ConfigureAwait(false);
+        if (!State.Connected) return;
+
+        if (await VerifyInternetAsync(port, ct).ConfigureAwait(false))
+        {
+            Logger.Info("Conn", "INTERNET OK — verified end-to-end through the tunnel");
+            return;
+        }
+        Logger.Warn("Conn", "internet check FAILED through the tunnel — trying to self-heal (token re-sync)…");
+
+        // self-heal: if a USB device is attached, re-pull the phone token
+        try
+        {
+            var serial = _serial;
+            if (serial != null)
+            {
+                await TokenSync.SyncAsync(serial, ct).ConfigureAwait(false);
+            }
+            else
+            {
+                Logger.Warn("Conn",
+                    "no USB device for token re-sync — paste the phone token manually " +
+                    "(phone: Security → Copy → PC: Settings → Pairing token), or connect the cable");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn("Conn", "token re-sync failed: " + ex.Message);
+        }
+
+        await Task.Delay(2000, ct).ConfigureAwait(false);
+        if (!State.Connected) return;
+
+        if (await VerifyInternetAsync(port, ct).ConfigureAwait(false))
+        {
+            Logger.Info("Conn", "INTERNET OK after token re-sync — self-heal successful");
+        }
+        else
+        {
+            Logger.Warn("Conn",
+                "still no internet — checklist: 1) phone mobile data ON, 2) sharing running on the phone " +
+                "(stop/start once), 3) token pasted correctly, 4) phone VPN off");
+        }
     }
 
     private async Task MonitorLoopAsync(CancellationToken ct)

@@ -2,6 +2,7 @@ package pro.netbridge.android.ui
 
 import android.content.Context
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -71,6 +72,26 @@ class MainActivity : ComponentActivity() {
     private val notifPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
+    /** A killed sharing service = broken tether mid-session. Ask once for the
+     *  battery-optimization exemption so OEM aggressive killers leave us alone. */
+    private fun requestBatteryExemption() {
+        if (Prefs.batteryPrompted) return
+        Prefs.batteryPrompted = true
+        try {
+            val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            if (Build.VERSION.SDK_INT >= 23 && !pm.isIgnoringBatteryOptimizations(packageName)) {
+                startActivity(
+                    android.content.Intent(
+                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:$packageName")
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Logger.e("Main", "battery exemption prompt failed: ${e.message}")
+        }
+    }
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(wrap(newBase))
     }
@@ -90,6 +111,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33) {
             notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
+        requestBatteryExemption()
         // zero-touch: bring the sharing service up the moment the app opens
         if (Prefs.autoStartService && !AppState.serviceRunning.value) {
             try {
