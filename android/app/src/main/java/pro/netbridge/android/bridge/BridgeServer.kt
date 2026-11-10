@@ -46,6 +46,7 @@ class BridgeServer(
     private val running = AtomicBoolean(false)
     private var serverSocket: ServerSocket? = null
     private val sessions = AtomicLong(0)
+    private var restartAttempts = 0
 
     companion object {
         private const val TAG = "Bridge"
@@ -64,12 +65,12 @@ class BridgeServer(
     }
 
     fun start() {
+        restartAttempts = 0 // every explicit start gets a fresh watchdog budget
         if (!running.compareAndSet(false, true)) return
         scope.launch {
             // Watchdog: a dead accept loop means the companion can never pair —
             // restart the listener up to 6 times before giving up.
-            var attempts = 0
-            while (running.get() && scope.isActive && attempts < 6) {
+            while (running.get() && scope.isActive && restartAttempts < 6) {
                 try {
                     val ss = ServerSocket()
                     ss.reuseAddress = true
@@ -86,14 +87,17 @@ class BridgeServer(
                         scope.launch { handle(client, sessions.incrementAndGet()) }
                     }
                 } catch (e: Exception) {
-                    Logger.e(TAG, "Bridge crashed (attempt $attempts)", e)
+                    Logger.e(TAG, "Bridge crashed (attempt $restartAttempts)", e)
                 }
-                attempts++
+                restartAttempts++
                 try { serverSocket?.close() } catch (_: IOException) {}
-                if (running.get() && scope.isActive && attempts < 6) {
+                if (running.get() && scope.isActive && restartAttempts < 6) {
                     Logger.w(TAG, "restarting bridge in 2s…")
                     delay(2000)
                 }
+            }
+            if (restartAttempts >= 6) {
+                Logger.e(TAG, "bridge watchdog gave up after 6 restarts — sharing service restart required")
             }
             running.set(false)
         }

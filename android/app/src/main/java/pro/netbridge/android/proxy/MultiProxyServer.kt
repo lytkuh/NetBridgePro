@@ -50,6 +50,7 @@ class MultiProxyServer(private val stats: ProxyStats) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val running = AtomicBoolean(false)
     private var serverSocket: ServerSocket? = null
+    private var restartAttempts = 0
 
     companion object {
         private const val TAG = "Proxy"
@@ -69,13 +70,13 @@ class MultiProxyServer(private val stats: ProxyStats) {
     }
 
     fun start() {
+        restartAttempts = 0 // every explicit start gets a fresh watchdog budget
         if (!running.compareAndSet(false, true)) return
         scope.launch {
             val port = Prefs.proxyPort
             // Watchdog: a single accept/bind crash used to kill the data plane
             // for good ("connected but no internet"). Restart up to 6 times.
-            var attempts = 0
-            while (running.get() && scope.isActive && attempts < 6) {
+            while (running.get() && scope.isActive && restartAttempts < 6) {
                 try {
                     val ss = ServerSocket()
                     ss.reuseAddress = true
@@ -92,14 +93,17 @@ class MultiProxyServer(private val stats: ProxyStats) {
                         scope.launch { handleClient(client) }
                     }
                 } catch (e: Exception) {
-                    Logger.e(TAG, "Proxy server crashed (attempt $attempts)", e)
+                    Logger.e(TAG, "Proxy server crashed (attempt $restartAttempts)", e)
                 }
-                attempts++
+                restartAttempts++
                 try { serverSocket?.close() } catch (_: IOException) {}
-                if (running.get() && scope.isActive && attempts < 6) {
+                if (running.get() && scope.isActive && restartAttempts < 6) {
                     Logger.w(TAG, "restarting proxy server in 2s…")
                     delay(2000)
                 }
+            }
+            if (restartAttempts >= 6) {
+                Logger.e(TAG, "proxy watchdog gave up after 6 restarts — sharing service restart required")
             }
             running.set(false)
             Logger.i(TAG, "Proxy server stopped")
@@ -124,14 +128,16 @@ class MultiProxyServer(private val stats: ProxyStats) {
             socket.soTimeout = 30_000
 
             val input = BufferedInputStream(socket.getInputStream(), 8 * 1024)
-            input.mark(8)
+            // Consume the first byte WITHOUT mark/reset. The previous
+            // mark(8)/read()/reset() dance corrupted the stream state on this
+            // device and dropped every byte after the method negotiation
+            // ("stream ended" + RFC1929 "Read timed out" on the companion).
             val first = input.read()
-            input.reset()
 
             when (first) {
-                SOCKS_VER5, SOCKS_VER4 -> socksHandler(socket, input)
+                SOCKS_VER5, SOCKS_VER4 -> socksHandler(socket, input, first)
                 -1 -> socket.close()
-                else -> httpHandler(socket, input)
+                else -> httpHandler(socket, input, first)
             }
         } catch (e: Exception) {
             Logger.d(TAG, "client error: ${e.javaClass.simpleName}: ${e.message}")
@@ -143,11 +149,10 @@ class MultiProxyServer(private val stats: ProxyStats) {
 
     // ============================ SOCKS =============================== //
 
-    private fun socksHandler(socket: Socket, input: InputStream) {
+    private fun socksHandler(socket: Socket, input: InputStream, version: Int) {
         val dis = DataInputStream(input)
-        val version = dis.readUnsignedByte()
         when (version) {
-            SOCKS_VER5 -> socks5(socket, dis)
+            SOCKS_VER5 -> socks5(socket, dis, input)
             SOCKS_VER4 -> socks4(socket, dis)
             else -> socket.close()
         }
@@ -198,12 +203,13 @@ class MultiProxyServer(private val stats: ProxyStats) {
         }
     }
 
-    private fun socks5(socket: Socket, dis: DataInputStream) {
+    private fun socks5(socket: Socket, dis: DataInputStream, input: InputStream) {
         val out = socket.getOutputStream()
         try {
-            // -- method negotiation
+            // -- method negotiation (with byte-level diagnostics)
             val nmethods = dis.readUnsignedByte()
             val methods = ByteArray(nmethods).also { dis.readFully(it) }
+            Logger.d(TAG, "socks5 diag: nmethods=$nmethods methods=${methods.joinToString("") { "%02X".format(it) }}")
             val wantUserPass = Prefs.requireAuth
             val authAccepted = when {
                 !wantUserPass && methods.contains(0x00.toByte()) -> 0x00
@@ -221,10 +227,22 @@ class MultiProxyServer(private val stats: ProxyStats) {
 
             // -- RFC 1929 user/pass
             if (authAccepted == 0x02) {
+                Logger.d(TAG, "socks5 diag: waiting for RFC1929 credentials… available=${input.available()}")
+                // RFC 1929 frame: ver(0x01) | uLen | uname | pLen | passwd
+                // The version byte MUST be consumed first — skipping it shifted
+                // every field by one byte and made the parser block forever
+                // waiting for a pass length of 110, killing the data plane.
+                val authVer = dis.readUnsignedByte()
+                if (authVer != 0x01) {
+                    Logger.w(TAG, "RFC1929 auth version mismatch: $authVer")
+                    socket.close()
+                    return
+                }
                 val uLen = dis.readUnsignedByte()
                 val user = ByteArray(uLen).also { dis.readFully(it) }.toString(Charsets.ISO_8859_1)
                 val pLen = dis.readUnsignedByte()
                 val pass = ByteArray(pLen).also { dis.readFully(it) }.toString(Charsets.ISO_8859_1)
+                Logger.d(TAG, "socks5 diag: uLen=$uLen pLen=$pLen passLen=${pass.length}")
                 val ok = TokenAuth.verifyProxyCreds(user, pass)
                 out.write(byteArrayOf(0x01, (if (ok) 0x00 else 0x01).toByte()))
                 out.flush()
@@ -287,6 +305,7 @@ class MultiProxyServer(private val stats: ProxyStats) {
             remote.sendBufferSize = 256 * 1024
             remote.connect(InetSocketAddress(host, port), CONNECT_TIMEOUT_MS)
         } catch (e: Exception) {
+            Logger.e(TAG, "outbound connect failed: $host:$port :: ${e.javaClass.simpleName}: ${e.message}")
             try { remote.close() } catch (_: IOException) {}
             val rep = when (e) {
                 is SocketTimeoutException -> REP_TTL_EXPIRED
@@ -427,9 +446,9 @@ class MultiProxyServer(private val stats: ProxyStats) {
 
     // ============================ HTTP ================================ //
 
-    private fun httpHandler(socket: Socket, rawInput: InputStream) {
+    private fun httpHandler(socket: Socket, rawInput: InputStream, firstByte: Int) {
         try {
-            if (Prefs.requireAuth && !httpCheckAuth(rawInput)) {
+            if (Prefs.requireAuth && !httpCheckAuth(rawInput, firstByte)) {
                 socket.getOutputStream().write(
                     ("HTTP/1.1 407 Proxy Authentication Required\r\n" +
                         "Proxy-Authenticate: Basic realm=\"NetBridge\"\r\n" +
@@ -440,7 +459,9 @@ class MultiProxyServer(private val stats: ProxyStats) {
                 return
             }
 
-            val head = readHttpHead(rawInput) ?: run { socket.close(); return }
+            // firstByte was consumed during protocol detection — prepend it
+            val headRest = readHttpHead(rawInput) ?: run { socket.close(); return }
+            val head = (if (firstByte in 0..0xFF) firstByte.toChar().toString() else "") + headRest
             val lines = head.split("\r\n")
             val requestLine = lines.firstOrNull() ?: run { socket.close(); return }
             val parts = requestLine.trim().split(" ")
@@ -499,11 +520,14 @@ class MultiProxyServer(private val stats: ProxyStats) {
         }
     }
 
-    private fun httpCheckAuth(rawInput: InputStream): Boolean {
+    private fun httpCheckAuth(rawInput: InputStream, firstByte: Int): Boolean {
         rawInput.mark(HEAD_LIMIT)
-        val head = readHttpHead(rawInput)
+        val head = StringBuilder()
+        if (firstByte in 0..0xFF) head.append(firstByte.toChar())
+        head.append(readHttpHead(rawInput) ?: "")
+        val headStr = head.toString()
         rawInput.reset()
-        val line = head?.lineSequence()
+        val line = headStr.lineSequence()
             ?.firstOrNull { it.lowercase().startsWith("proxy-authorization:") }
             ?: return false
         val b64 = line.substringAfter("Basic", "").trim()

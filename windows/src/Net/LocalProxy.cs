@@ -248,9 +248,12 @@ public class LocalProxy
             throw new IOException("phone offered no supported auth method");
         }
 
-        // CONNECT request — pass hostname unless resolved locally
-        var resolved = await ResolveHostAsync(targetHost, ct).ConfigureAwait(false);
-        var useHost = resolved ?? targetHost;
+        // CONNECT request — REMOTE DNS: send the hostname and let the PHONE
+        // resolve it on its own network (its own DNS / VPN rules). Resolving on
+        // the PC breaks when the PC's DNS is poisoned by VPN/proxy apps
+        // (fake-DNS returns ::1 or unreachable addresses for the phone's
+        // carrier) — the classic "connected but no internet".
+        var useHost = targetHost;
 
         var req = BuildConnectRequest(useHost, targetPort);
         await s.WriteAsync(req, ct).ConfigureAwait(false);

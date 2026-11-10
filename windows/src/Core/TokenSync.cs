@@ -20,6 +20,60 @@ public static class TokenSync
     private static readonly Regex TokenRx =
         new("name=\"token\">([0-9a-fA-F]{16,})<", RegexOptions.Compiled);
 
+    /// <summary>Asks the phone bridge for the token DIRECTLY over the network
+    /// (no adb). Only answered while the phone-side pairing window is open
+    /// (user taps "Allow computer pairing" on the phone, or the adb broadcast
+    /// opened it). This is the transport-independent zero-touch path.</summary>
+    public static async Task<string?> PullDirectAsync(string host, int bridgePort, CancellationToken ct)
+    {
+        try
+        {
+            using var tcp = new TcpClient();
+            await tcp.ConnectAsync(host, bridgePort, ct).ConfigureAwait(false);
+            tcp.NoDelay = true;
+            var stream = tcp.GetStream();
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            using var writer = new StreamWriter(stream, new UTF8Encoding(false))
+            {
+                AutoFlush = true,
+                NewLine = "\n"
+            };
+
+            await writer.WriteLineAsync("{\"id\":1,\"cmd\":\"pair.token\"}").ConfigureAwait(false);
+
+            using var wait = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            wait.CancelAfter(TimeSpan.FromSeconds(6));
+            var line = await reader.ReadLineAsync(wait.Token).ConfigureAwait(false);
+            if (line == null)
+            {
+                Logger.Warn("Token", $"pair.token: no response from {host}:{bridgePort}");
+                return null;
+            }
+
+            using var doc = JsonDocument.Parse(line);
+            var root = doc.RootElement.Clone();
+            if (root.TryGetProperty("result", out var res) && res.TryGetProperty("token", out var t))
+            {
+                Logger.Info("Token", $"token pulled directly from {host}:{bridgePort}");
+                return t.GetString()?.ToLowerInvariant();
+            }
+
+            var err = root.TryGetProperty("error", out var e) ? e.GetString() : "unknown response";
+            Logger.Warn("Token", $"pair.token rejected: {err} — open the pairing window on the phone (Security tab)");
+            return null;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            Logger.Warn("Token", "pair.token timed out");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn("Token", $"pair.token to {host}:{bridgePort} failed: " + ex.Message);
+            return null;
+        }
+    }
+
     /// <summary>Reads the phone token: adb broadcast → forwarded pair.token.</summary>
     public static async Task<string?> PullFromPhoneAsync(string serial, CancellationToken ct)
     {

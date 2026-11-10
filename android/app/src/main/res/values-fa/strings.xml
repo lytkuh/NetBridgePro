@@ -48,6 +48,9 @@
     <string name="token_hint">برنامه ویندوز این توکن را خودکار می‌خواند (دکمه «همگام‌سازی از گوشی» هنگام اتصال کابل). احراز ترافیک با HMAC-SHA256 انجام می‌شود.</string>
     <string name="copy">کپی</string>
     <string name="regenerate">بازتولید</string>
+    <string name="pairing_open">اجازه اتصال کامپیوتر (۲ دقیقه)</string>
+    <string name="pairing_window_open">پنجره جفت‌سازی باز شد — حالا روی ویندوز «اتصال» را بزنید</string>
+    <string name="pairing_hint">اگر ویندوز گفت اینترنت رد شد: همین دکمه را بزنید و تا ۲ دقیقه روی ویندوز «اتصال» را بزنید — توکن خودکار همگام می‌شود.</string>
     <string name="grant_card">دسترسی‌های اعطاشده از PC</string>
     <string name="granted">دارد</string>
     <string name="not_granted">ندارد</string>

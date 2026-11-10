@@ -53,6 +53,8 @@ public class ConnectionManager
 
     private readonly AdbServerClient _adb = new();
     private string? _serial;
+    private string _bridgeHost = "";
+    private int _bridgePort;
     private CancellationTokenSource? _lifetimeCts;
     private Timer? _autoTimer;
     private bool _connecting;
@@ -243,12 +245,12 @@ public class ConnectionManager
         State.Endpoint = $"{probe.Host}:{probe.Port}";
         LocalProxy.Instance.SetPhoneEndpoint(probe.Host, probe.Port);
 
-        var bridgeHost = probe.Kind == TransportKind.AdbTunnel ? "127.0.0.1" : probe.Host;
-        var bridgePort = probe.Kind == TransportKind.AdbTunnel ? Constants.AdbForwardBridge : Constants.BridgePort;
+        _bridgeHost = probe.Kind == TransportKind.AdbTunnel ? "127.0.0.1" : probe.Host;
+        _bridgePort = probe.Kind == TransportKind.AdbTunnel ? Constants.AdbForwardBridge : Constants.BridgePort;
         try
         {
             using var bc = new CancellationTokenSource(TimeSpan.FromSeconds(12));
-            await Bridge.ConnectAsync(bridgeHost, bridgePort, bc.Token).ConfigureAwait(false);
+            await Bridge.ConnectAsync(_bridgeHost, _bridgePort, bc.Token).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -342,40 +344,99 @@ public class ConnectionManager
             Logger.Info("Conn", "INTERNET OK — verified end-to-end through the tunnel");
             return;
         }
-        Logger.Warn("Conn", "internet check FAILED through the tunnel — trying to self-heal (token re-sync)…");
+        Logger.Warn("Conn", "internet check FAILED through the tunnel — starting the pairing loop…");
 
-        // self-heal: if a USB device is attached, re-pull the phone token
-        try
+        // ---- Pairing loop: give the HUMAN 3 minutes -----------------------
+        // The phone answers pair.token only while its pairing window is open,
+        // which requires a tap on the phone. Retry every ~8s for 3 minutes so
+        // the user has time to tap 'Allow computer pairing' on the phone, then
+        // the token arrives and the connection self-heals.
+        var deadline = DateTime.UtcNow.AddMinutes(3);
+        var attempt = 0;
+        var synced = false;
+        while (State.Connected && DateTime.UtcNow < deadline && !ct.IsCancellationRequested)
         {
-            var serial = _serial;
-            if (serial != null)
+            attempt++;
+            Logger.Warn("Conn",
+                "WAITING FOR PAIRING — tap 'اجازه اتصال کامپیوتر (۲ دقیقه)' on the phone " +
+                "(Security tab)… I will grab the token automatically");
+            try
             {
-                await TokenSync.SyncAsync(serial, ct).ConfigureAwait(false);
+                var tok = await TokenSync.PullDirectAsync(_bridgeHost, _bridgePort, ct).ConfigureAwait(false);
+                if (!string.IsNullOrEmpty(tok))
+                {
+                    synced = true;
+                    if (SettingsStore.Current.Token != tok)
+                    {
+                        SettingsStore.Current.Token = tok;
+                        SettingsStore.Save();
+                        Logger.Info("Conn", "pairing token updated from the phone ✓");
+                    }
+                    else
+                    {
+                        Logger.Info("Conn", "pairing token already matches — re-checking internet…");
+                    }
+                    await Task.Delay(1500, ct).ConfigureAwait(false);
+                    if (await VerifyInternetAsync(port, ct).ConfigureAwait(false))
+                    {
+                        Logger.Info("Conn", "INTERNET OK after pairing — self-heal successful");
+                        return;
+                    }
+                    Logger.Warn("Conn", "token OK but internet still fails — checking again…");
+                }
             }
-            else
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+            catch (Exception ex)
             {
-                Logger.Warn("Conn",
-                    "no USB device for token re-sync — paste the phone token manually " +
-                    "(phone: Security → Copy → PC: Settings → Pairing token), or connect the cable");
+                Logger.Warn("Conn", $"pairing attempt {attempt} failed: {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warn("Conn", "token re-sync failed: " + ex.Message);
+            await Task.Delay(8000, ct).ConfigureAwait(false);
         }
 
-        await Task.Delay(2000, ct).ConfigureAwait(false);
-        if (!State.Connected) return;
-
-        if (await VerifyInternetAsync(port, ct).ConfigureAwait(false))
+        if (synced)
         {
-            Logger.Info("Conn", "INTERNET OK after token re-sync — self-heal successful");
+            Logger.Warn("Conn", "token synced but internet still failing — pulling the PHONE-side log…");
+            await PullPhoneLogAsync(ct).ConfigureAwait(false);
+            Logger.Warn("Conn",
+                "checklist: 1) phone mobile data ON, 2) sharing running on the phone (stop/start once), " +
+                "3) phone VPN off, 4) re-Connect");
         }
         else
         {
             Logger.Warn("Conn",
-                "still no internet — checklist: 1) phone mobile data ON, 2) sharing running on the phone " +
-                "(stop/start once), 3) token pasted correctly, 4) phone VPN off");
+                "no pairing happened within 3 minutes — tap 'Allow computer pairing' on the phone " +
+                "(Security tab) and press Connect again, or paste the token manually in Settings");
+        }
+    }
+
+    /// <summary>Pulls the phone app's own log file (app-external dir — works for
+    /// release builds) and mirrors the last lines into the Windows log.</summary>
+    private async Task PullPhoneLogAsync(CancellationToken ct)
+    {
+        try
+        {
+            var serial = _serial;
+            if (serial == null)
+            {
+                Logger.Warn("Phone", "phone log unavailable (no USB device attached)");
+                return;
+            }
+            var outp = await _adb.ShellAsync(serial,
+                "tail -n 40 /sdcard/Android/data/pro.netbridge.android/files/netbridge.log 2>/dev/null",
+                ct).ConfigureAwait(false);
+            AdbServerClient.ExtractRc(outp, out var clean);
+            var lines = clean.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            if (lines.Length == 0)
+            {
+                Logger.Warn("Phone", "phone log empty (old APK without file logging? install v1.4.1+ on the phone)");
+                return;
+            }
+            foreach (var line in lines.TakeLast(25))
+                Logger.Info("Phone", line.Trim());
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn("Phone", "pull failed: " + ex.Message);
         }
     }
 

@@ -9,6 +9,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         Prefs.init(this)
+        Logger.initFileLogging(this)
         Logger.i(TAG, "NetBridge Pro started (v${BuildConfig.VERSION_NAME})")
     }
 

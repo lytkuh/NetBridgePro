@@ -21,8 +21,8 @@ android {
         applicationId = "pro.netbridge.android"
         minSdk = 26          // Android 8.0
         targetSdk = 35       // Android 15
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 7
+        versionName = "1.5.0"
         vectorDrawables { useSupportLibrary = true }
     }
 

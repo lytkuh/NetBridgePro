@@ -201,6 +201,22 @@ fun SecurityScreen() {
                     Logger.i("Security", "token regenerated — press 'Sync from phone' on the companion")
                 }) { Text(stringResource(R.string.regenerate)) }
             }
+
+            Spacer(Modifier.height(12.dp))
+            // One-tap pairing: opens the bridge pairing window so the PC can pull
+            // the token over the tunnel itself — no adb / USB / manual paste needed.
+            Button(onClick = {
+                pro.netbridge.android.bridge.PairingWindow.open(120)
+                android.widget.Toast.makeText(
+                    context,
+                    context.getString(R.string.pairing_window_open),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                Logger.i("Security", "pairing window opened from the phone screen")
+            }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.pairing_open))
+            }
+            Text(stringResource(R.string.pairing_hint), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         Card2(stringResource(R.string.grant_card)) {
